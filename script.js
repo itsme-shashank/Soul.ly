@@ -46,6 +46,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pName) pName.textContent = name;
     if (pRole) pRole.textContent = role;
     spawnParticles(el);
+
+    // Auto-play this persona's audio when the tab is selected
+    const audioSrc = el.dataset.audio;
+    const playBtn  = el.querySelector('.voice-play-btn');
+    if (audioSrc && playBtn) {
+      const onclickStr = playBtn.getAttribute('onclick') || '';
+      // Extract id and icon from the existing onclick: playPersonaAudio(event,'src','id','name','icon')
+      const m = onclickStr.match(/playPersonaAudio\(event,'[^']*','([^']+)','([^']+)','([^']+)'\)/);
+      if (m) {
+        const [, pid, pname, icon] = m;
+        // Use a dummy event — stopPropagation is a no-op since we're already inside selectPersona
+        playPersonaAudio({ stopPropagation: () => {} }, audioSrc, pid, pname, icon);
+      }
+    }
   };
 
   /* ═══════════════════════════════════════
@@ -109,13 +123,24 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>`;
   }
 
-  /* Reset a play button back to ▶ state */
-  function resetPlayBtn(id) {
-    const btn = document.getElementById(`vp-icon-${id}`)?.parentElement;
-    if (!btn) return;
-    btn.classList.remove('playing');
-    btn.innerHTML = `<span class="vp-icon" id="vp-icon-${id}">▶</span>`;
-  }
+  function resetPlayBtn(personaId) {
+    if (!personaId) return;
+
+    // Reset the play button icon back to ▶
+    const btn = document.querySelector(`.voice-play-btn[data-persona="${personaId}"]`);
+    if (btn) {
+        btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5,3 19,12 5,21"/>
+        </svg>`;
+        btn.classList.remove('playing');
+    }
+
+    // Remove playing state from the persona card
+    const card = document.querySelector(`.persona[data-id="${personaId}"]`);
+    if (card) {
+        card.classList.remove('playing');
+    }
+}
 
   /* Stop whatever is playing */
   window.stopPersonaAudio = function() {
@@ -125,7 +150,11 @@ document.addEventListener('DOMContentLoaded', () => {
       activeAudio = null;
     }
     if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
-    if (activePersonaId) { resetPlayBtn(activePersonaId); activePersonaId = null; }
+    if (activePersonaId) {
+      const prevId = activePersonaId;
+      activePersonaId = null;  // null it first so resetPlayBtn doesn't see stale state
+      resetPlayBtn(prevId);    // now reset the OLD button correctly
+    }
     hideProgress();
   };
 
