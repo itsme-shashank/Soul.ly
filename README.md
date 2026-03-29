@@ -1,2 +1,2 @@
 # Soul.ly
-Soully
+Soul.ly
