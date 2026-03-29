@@ -48,6 +48,146 @@ document.addEventListener('DOMContentLoaded', () => {
     spawnParticles(el);
   };
 
+  /* ═══════════════════════════════════════
+     PERSONA VOICE PREVIEW AUDIO PLAYER
+  ═══════════════════════════════════════ */
+  let activeAudio    = null;   // current Audio object
+  let activePersonaId = null;  // 'aria' | 'kai' | 'sol'
+  let progressTimer  = null;
+
+  /* Format seconds → "m:ss" */
+  function fmtTime(secs) {
+    if (!isFinite(secs) || isNaN(secs)) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  /* Show/update progress bar UI */
+  function showProgress(name, icon) {
+    const wrap = document.getElementById('audioProgressWrap');
+    const nameEl = document.getElementById('audioPlayingName');
+    const avaEl  = document.getElementById('audioAvaIcon');
+    if (wrap)   wrap.style.display = 'block';
+    if (nameEl) nameEl.textContent = `Listening to ${name}…`;
+    if (avaEl)  avaEl.textContent  = icon;
+  }
+
+  function hideProgress() {
+    const wrap = document.getElementById('audioProgressWrap');
+    if (wrap) wrap.style.display = 'none';
+    const bar = document.getElementById('audioProgressBar');
+    if (bar)  bar.style.width = '0%';
+    const ct  = document.getElementById('audioCurrentTime');
+    if (ct)   ct.textContent = '0:00';
+  }
+
+  function updateProgressBar() {
+    if (!activeAudio) return;
+    const pct = activeAudio.duration
+      ? (activeAudio.currentTime / activeAudio.duration) * 100
+      : 0;
+    const bar = document.getElementById('audioProgressBar');
+    const ct  = document.getElementById('audioCurrentTime');
+    const dur = document.getElementById('audioDuration');
+    if (bar) bar.style.width = pct + '%';
+    if (ct)  ct.textContent  = fmtTime(activeAudio.currentTime);
+    if (dur) dur.textContent = fmtTime(activeAudio.duration);
+  }
+
+  /* Set a play button to "playing" state (animated wave bars) */
+  function setPlayingState(id) {
+    const btn = document.querySelector(`#vp-icon-${id}`)?.parentElement;
+    if (!btn) return;
+    btn.classList.add('playing');
+    btn.innerHTML = `<div class="vp-waves">
+      <div class="vp-wave-bar"></div>
+      <div class="vp-wave-bar"></div>
+      <div class="vp-wave-bar"></div>
+      <div class="vp-wave-bar"></div>
+      <div class="vp-wave-bar"></div>
+    </div>`;
+  }
+
+  /* Reset a play button back to ▶ state */
+  function resetPlayBtn(id) {
+    const btn = document.getElementById(`vp-icon-${id}`)?.parentElement;
+    if (!btn) return;
+    btn.classList.remove('playing');
+    btn.innerHTML = `<span class="vp-icon" id="vp-icon-${id}">▶</span>`;
+  }
+
+  /* Stop whatever is playing */
+  window.stopPersonaAudio = function() {
+    if (activeAudio) {
+      activeAudio.pause();
+      activeAudio.currentTime = 0;
+      activeAudio = null;
+    }
+    if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+    if (activePersonaId) { resetPlayBtn(activePersonaId); activePersonaId = null; }
+    hideProgress();
+  };
+
+  /* Main: play/pause a persona voice sample */
+  window.playPersonaAudio = function(event, src, id, name, icon) {
+    event.stopPropagation(); // don't trigger selectPersona on button click
+
+    // If same persona is playing → stop
+    if (activePersonaId === id && activeAudio && !activeAudio.paused) {
+      stopPersonaAudio();
+      return;
+    }
+
+    // Stop any currently playing audio
+    stopPersonaAudio();
+
+    // Create new audio
+    const audio = new Audio(src);
+    activeAudio     = audio;
+    activePersonaId = id;
+
+    // Show UI
+    setPlayingState(id);
+    showProgress(name, icon);
+
+    // Wire up events
+    audio.addEventListener('loadedmetadata', () => {
+      const dur = document.getElementById('audioDuration');
+      if (dur) dur.textContent = fmtTime(audio.duration);
+    });
+
+    audio.addEventListener('timeupdate', updateProgressBar);
+
+    audio.addEventListener('ended', () => {
+      stopPersonaAudio();
+    });
+
+    audio.addEventListener('error', (e) => {
+      console.warn('Audio could not load:', src, e);
+      stopPersonaAudio();
+      // Show friendly message instead of crashing
+      const wrap = document.getElementById('audioProgressWrap');
+      if (wrap) {
+        wrap.style.display = 'block';
+        const nameEl = document.getElementById('audioPlayingName');
+        if (nameEl) nameEl.textContent = `Place ${name.toLowerCase()}.mp3 in the /audio folder`;
+        const bar = document.getElementById('audioProgressBar');
+        if (bar) bar.style.width = '0%';
+        setTimeout(() => { if (wrap) wrap.style.display = 'none'; }, 3000);
+      }
+    });
+
+    // Start progress polling as backup
+    progressTimer = setInterval(updateProgressBar, 100);
+
+    // Play
+    audio.play().catch(err => {
+      console.warn('Playback failed:', err);
+      stopPersonaAudio();
+    });
+  };
+
   /* ── Particle burst on persona select ── */
   function spawnParticles(el) {
     const rect = el.getBoundingClientRect();
@@ -174,8 +314,10 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('mousemove', e => {
     const x = (e.clientX / window.innerWidth - .5) * 20;
     const y = (e.clientY / window.innerHeight - .5) * 20;
-    document.querySelector('.orb-a').style.transform = `translate(${x}px,${y}px)`;
-    document.querySelector('.orb-b').style.transform = `translate(${-x}px,${-y}px)`;
+    const orbA = document.querySelector('.orb-a');
+    const orbB = document.querySelector('.orb-b');
+    if (orbA) orbA.style.transform = `translate(${x}px,${y}px)`;
+    if (orbB) orbB.style.transform = `translate(${-x}px,${-y}px)`;
   });
 
   /* ── Smooth scroll for all anchor links ── */
@@ -189,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   console.log('✦ Soully loaded · Built with 💚');
 
-  /* ── Aria Demo Modal ── */
+  /* ══ Aria Demo Modal ══ */
   const demoConversation = [
     {
       opts: ["Really anxious about tomorrow…", "Can't stop overthinking", "Just feeling really low today"],
@@ -242,12 +384,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleDemoChoice(choice) {
     const chat = document.getElementById('demoChat');
     const step = demoConversation[demoStep];
-    // Add user bubble
     const uBub = document.createElement('div');
     uBub.className = 'demo-bub user-bub';
     uBub.textContent = choice;
     chat.appendChild(uBub);
-    // Clear options, show typing
     document.getElementById('demoOptions').innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
     chat.scrollTop = chat.scrollHeight;
     setTimeout(() => {

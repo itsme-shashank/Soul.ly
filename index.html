@@ -386,23 +386,51 @@
     </div>
     <div>
       <div class="persona-list">
-        <div class="persona on" onclick="selectPersona(this,'Aria','Female · Warm &amp; Nurturing')">
+        <div class="persona on" onclick="selectPersona(this,'Aria','Female · Warm &amp; Nurturing')" data-audio="audio/aria.mp3">
           <div class="p-ava">🌿</div>
-          <div><div class="p-name">Aria</div><div class="p-desc">Female · Warm &amp; Nurturing · Calm, soothing voice</div></div>
+          <div style="flex:1"><div class="p-name">Aria</div><div class="p-desc">Female · Warm &amp; Nurturing · Calm, soothing voice</div></div>
+          <button class="voice-play-btn" onclick="playPersonaAudio(event,'audio/aria.mp3','aria','Aria','🌿')" title="Preview Aria's voice">
+            <span class="vp-icon" id="vp-icon-aria">▶</span>
+          </button>
           <div class="p-radio"></div>
         </div>
-        <div class="persona" onclick="selectPersona(this,'Kai','Male · Steady &amp; Grounding')">
+        <div class="persona" onclick="selectPersona(this,'Kai','Male · Steady &amp; Grounding')" data-audio="audio/kai.mp3">
           <div class="p-ava">🌊</div>
-          <div><div class="p-name">Kai</div><div class="p-desc">Male · Steady &amp; Grounding · Deep, reassuring voice</div></div>
+          <div style="flex:1"><div class="p-name">Kai</div><div class="p-desc">Male · Steady &amp; Grounding · Deep, reassuring voice</div></div>
+          <button class="voice-play-btn" onclick="playPersonaAudio(event,'audio/kai.mp3','kai','Kai','🌊')" title="Preview Kai's voice">
+            <span class="vp-icon" id="vp-icon-kai">▶</span>
+          </button>
           <div class="p-radio"></div>
         </div>
-        <div class="persona" onclick="selectPersona(this,'Sol','Neutral · Open &amp; Gentle')">
+        <div class="persona" onclick="selectPersona(this,'Sol','Neutral · Open &amp; Gentle')" data-audio="audio/sol.mp3">
           <div class="p-ava">☀️</div>
-          <div><div class="p-name">Sol</div><div class="p-desc">Neutral · Open &amp; Gentle · Soft, inclusive voice</div></div>
+          <div style="flex:1"><div class="p-name">Sol</div><div class="p-desc">Neutral · Open &amp; Gentle · Soft, inclusive voice</div></div>
+          <button class="voice-play-btn" onclick="playPersonaAudio(event,'audio/sol.mp3','sol','Sol','☀️')" title="Preview Sol's voice">
+            <span class="vp-icon" id="vp-icon-sol">▶</span>
+          </button>
           <div class="p-radio"></div>
         </div>
       </div>
-      <div style="margin-top:28px;padding:20px 22px;background:rgba(15,184,126,.07);border:1px solid var(--b1);border-radius:20px;">
+      <!-- Audio progress bar -->
+      <div id="audioProgressWrap" style="display:none;margin-top:20px;padding:16px 20px;background:rgba(15,184,126,.07);border:1px solid rgba(15,184,126,.25);border-radius:16px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <div id="audioAvaIcon" style="font-size:1.4rem;">🌿</div>
+          <div>
+            <div id="audioPlayingName" style="font-size:.88rem;font-weight:800;color:var(--t1);">Listening to Aria...</div>
+            <div style="font-size:.74rem;color:var(--t3);">Sample voice preview</div>
+          </div>
+          <button id="audioStopBtn" onclick="stopPersonaAudio()" style="margin-left:auto;background:rgba(255,80,80,.15);border:1px solid rgba(255,80,80,.3);color:#ff6b6b;border-radius:8px;padding:6px 12px;font-family:Nunito,sans-serif;font-size:.75rem;font-weight:700;cursor:pointer;">■ Stop</button>
+        </div>
+        <div style="height:4px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;">
+          <div id="audioProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--m500),var(--s500));border-radius:4px;transition:width .1s linear;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:6px;">
+          <span id="audioCurrentTime" style="font-size:.68rem;color:var(--t3);">0:00</span>
+          <span id="audioDuration" style="font-size:.68rem;color:var(--t3);">0:00</span>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;padding:20px 22px;background:rgba(15,184,126,.07);border:1px solid var(--b1);border-radius:20px;">
         <div style="font-size:.74rem;font-weight:700;color:var(--t3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;">Currently selected</div>
         <div id="prevName" style="font-size:1.2rem;font-weight:900;color:var(--t1);margin-bottom:3px;">Aria</div>
         <div id="prevRole" style="font-size:.8rem;color:var(--m400);font-weight:600;">Female · Warm &amp; Nurturing</div>
